@@ -100,35 +100,40 @@ function preparecanvas(LaTeX_array, limits, ticks, probes, colors, PlotPars::Dic
     return figure
 end
 
-function drawgaussian!(canvas, σ, i, central, color)
+function drawgaussian!(canvas, σ, i, central, color; linestyle = :solid, fill = true)
     ax = canvas[i,i]
     x = Array(LinRange(-4σ+central,4σ+central, 200))
-    Makie.lines!(ax, x, gaussian.(central, σ, x)./gaussian.(central, σ, central), color = color, linewidth = 4)
-    Makie.band!(ax, x, 0, gaussian.(central, σ, x)./gaussian.(central, σ, central) , color=(color, 0.2))
+    Makie.lines!(ax, x, gaussian.(central, σ, x)./gaussian.(central, σ, central), color = color, linewidth = 4, linestyle=linestyle)
+    if fill
+        Makie.band!(ax, x, 0, gaussian.(central, σ, x)./gaussian.(central, σ, central) , color=(color, 0.2))
+    end
     x = Array(LinRange(-σ+central,σ+central, 200))
-    Makie.band!(ax, x, 0, gaussian.(central, σ, x)./gaussian.(central, σ, central) , color=(color, 0.4))
+    if fill
+        Makie.band!(ax, x, 0, gaussian.(central, σ, x)./gaussian.(central, σ, central) , color=(color, 0.4))
+    end
 end
 
-function drawellipse!(canvas, i, j, x, y, central_values, color)
+function drawellipse!(canvas, i, j, x, y, central_values, color; linestyle = :solid, fill = true)
     ax = canvas[i,j]
 
-    Makie.lines!(ax, x .+ central_values[j], y .+ central_values[i], color = color, linewidth = 4)
-    Makie.lines!(ax, 3x .+ central_values[j], 3y .+ central_values[i], color = color, linewidth = 4)
-
-    Makie.band!(ax, x .+ central_values[j], 0, y .+ central_values[i], color=(color, 0.4))
-    Makie.band!(ax, 3x .+ central_values[j], 0, 3y .+ central_values[i], color=(color, 0.2))
+    Makie.lines!(ax, x .+ central_values[j], y .+ central_values[i], color = color, linewidth = 4, linestyle=linestyle)
+    Makie.lines!(ax, 3x .+ central_values[j], 3y .+ central_values[i], color = color, linewidth = 4, linestyle=linestyle)
+    if fill
+        Makie.band!(ax, x .+ central_values[j], 0, y .+ central_values[i], color=(color, 0.4))
+        Makie.band!(ax, 3x .+ central_values[j], 0, 3y .+ central_values[i], color=(color, 0.2))
+    end
 end
 
-function paintcorrmatrix!(canvas, central_values, corr_matrix, color)
+function paintcorrmatrix!(canvas, central_values, corr_matrix, color; linestyle = :solid, fill = true)
     ciccio = canvas[1,1]
     for i in 1:length(central_values)
         for j in 1:i
             if i == j
-                drawgaussian!(ciccio, sqrt(corr_matrix[i,i]), i, central_values[i], color)
+                drawgaussian!(ciccio, sqrt(corr_matrix[i,i]), i, central_values[i], color; linestyle=linestyle, fill = fill)
             else
                 σi, σj, a, b, θ = ellipseparameters(corr_matrix, i,j)
                 x,y = ellipseparameterization(a, b, θ)
-                drawellipse!(ciccio, i, j, x, y, central_values, color)
+                drawellipse!(ciccio, i, j, x, y, central_values, color; linestyle=linestyle, fill = fill)
             end
         end
     end
